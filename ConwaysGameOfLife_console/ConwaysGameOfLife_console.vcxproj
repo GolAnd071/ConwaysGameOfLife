@@ -141,9 +141,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ConwaysGameOfLife_console.cpp" />
+    <ClCompile Include="Life.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="start_pos.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="Life.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
