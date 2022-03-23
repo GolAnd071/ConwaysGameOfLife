@@ -19,6 +19,7 @@ int main()
 	while (true) {
 		life->Update();
 		//system("pause");
+		Sleep(100);
 		system("cls");
 		life->PrintVector();
 	}

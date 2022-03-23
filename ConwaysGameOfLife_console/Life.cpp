@@ -74,13 +74,17 @@ void Life::Update()
 	++m_gener;
 
 	// Multiply matrices
-	// TODO: This matrix can be multiplied faster:
-	//       it's symmetric and has at maximum 9 non-zero elements in a row
 	std::vector<int> new_vector(m_width * m_height);
 	for (size_t i = 0; i < m_width * m_height; ++i) {
-		int sum = 0;
-		for (size_t j = 0; j < m_width * m_height; ++j)
-			sum += m_matrix.at(i * m_width * m_height + j) * m_vector.at(j);
+		int sum = m_matrix.at(i * (m_width * m_height + 1)) * m_vector.at(i);
+		if (i > 0) sum += m_matrix.at(i * (m_width * m_height + 1) - 1) * m_vector.at(i - 1);
+		if (i < m_width * m_height - 1) sum += m_matrix.at(i * (m_width * m_height + 1) + 1) * m_vector.at(i + 1);
+		if (i > m_width) sum += m_matrix.at(i * (m_width * m_height + 1) - m_width - 1) * m_vector.at(i - m_width - 1);
+		if (i > m_width - 1) sum += m_matrix.at(i * (m_width * m_height + 1) - m_width) * m_vector.at(i - m_width);
+		if (i > m_width - 2) sum += m_matrix.at(i * (m_width * m_height + 1) - m_width + 1) * m_vector.at(i - m_width + 1);
+		if (i < m_width * (m_height - 1) + 1) sum += m_matrix.at(i * (m_width * m_height + 1) + m_width - 1) * m_vector.at(i + m_width - 1);
+		if (i < m_width * (m_height - 1)) sum += m_matrix.at(i * (m_width * m_height + 1) + m_width) * m_vector.at(i + m_width);
+		if (i < m_width * (m_height - 1) - 1) sum += m_matrix.at(i * (m_width * m_height + 1) + m_width + 1) * m_vector.at(i + m_width + 1);
 		int mul = 1;
 		for (size_t j = 0; j < m_rule.size(); ++j)
 			mul *= (sum - m_rule.at(j));
@@ -104,9 +108,14 @@ void Life::PrintMatrix()
 void Life::PrintVector()
 {
 	std::cout << m_gener << '\n';
-	for (size_t i = 0; i < m_height; i += 2) {
+	for (size_t i = 0; i < m_height - 1; i += 2) {
 		for (size_t j = 0; j < m_width; ++j)
 			std::cout << (m_vector.at(i * m_width + j) ? (m_vector.at((i + 1) * m_width + j) ? "\xDB" : "\xDF") : (m_vector.at((i + 1) * m_width + j) ? "\xDC" : " "));
+		std::cout << '\n';
+	}
+	if (m_height % 2) {
+		for (size_t j = 0; j < m_width; ++j)
+			std::cout << (m_vector.at((m_height - 1) * m_width + j) ? "\xDF" : " ");
 		std::cout << '\n';
 	}
 }
