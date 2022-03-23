@@ -1,3 +1,2 @@
-x = 9, y = 15, rule = B3/S23
-3o3b3o$o2bobo2bo$o7bo$o7bo$bobobobo2$4bo$3b3o$2b2ob2o$3b3o$3b3o$3b3o$3bobo$3b
-obo$4bo!
+x = 9, y = 10, rule = B3/S23
+2bo$2bo$bo$b2o$o2bo$o5b2o$o3b4o$o4b2obo$o2bo2b3o$3o4bo!

@@ -28,7 +28,7 @@ Life::Life(const char filename[])
 	// Read size and rule
 	unsigned int x{}, y{}, b{}, s{};
 	if (file) fscanf_s(file, "x = %d, y = %d, rule = B%d/S%d\n", &x, &y, &b, &s);
-	m_width = 64, m_height = 64;
+	m_width = 128, m_height = 128;
 	int offset_x = (m_width - x) / 2,
 		offset_y = (m_height - y) / 2;
 	std::string bs = std::to_string(b), ss = std::to_string(s);
@@ -76,15 +76,15 @@ void Life::Update()
 	// Multiply matrices
 	std::vector<int> new_vector(m_width * m_height);
 	for (size_t i = 0; i < m_width * m_height; ++i) {
-		int sum = m_matrix.at(i * (m_width * m_height + 1)) * m_vector.at(i);
-		if (i > 0) sum += m_matrix.at(i * (m_width * m_height + 1) - 1) * m_vector.at(i - 1);
-		if (i < m_width * m_height - 1) sum += m_matrix.at(i * (m_width * m_height + 1) + 1) * m_vector.at(i + 1);
-		if (i > m_width) sum += m_matrix.at(i * (m_width * m_height + 1) - m_width - 1) * m_vector.at(i - m_width - 1);
-		if (i > m_width - 1) sum += m_matrix.at(i * (m_width * m_height + 1) - m_width) * m_vector.at(i - m_width);
-		if (i > m_width - 2) sum += m_matrix.at(i * (m_width * m_height + 1) - m_width + 1) * m_vector.at(i - m_width + 1);
-		if (i < m_width * (m_height - 1) + 1) sum += m_matrix.at(i * (m_width * m_height + 1) + m_width - 1) * m_vector.at(i + m_width - 1);
-		if (i < m_width * (m_height - 1)) sum += m_matrix.at(i * (m_width * m_height + 1) + m_width) * m_vector.at(i + m_width);
-		if (i < m_width * (m_height - 1) - 1) sum += m_matrix.at(i * (m_width * m_height + 1) + m_width + 1) * m_vector.at(i + m_width + 1);
+		int sum = m_vector.at(i);
+		if (i > 0) sum += m_matrix.at(i * 8 + 2) * m_vector.at(i - 1);
+		if (i < m_width * m_height - 1) sum += m_matrix.at(i * 8 + 3) * m_vector.at(i + 1);
+		if (i > m_width) sum += m_matrix.at(i * 8 + 4) * m_vector.at(i - m_width - 1);
+		if (i > m_width - 1) sum += m_matrix.at(i * 8) * m_vector.at(i - m_width);
+		if (i > m_width - 2) sum += m_matrix.at(i * 8 + 5) * m_vector.at(i - m_width + 1);
+		if (i < m_width * (m_height - 1) + 1) sum += m_matrix.at(i * 8 + 6) * m_vector.at(i + m_width - 1);
+		if (i < m_width * (m_height - 1)) sum += m_matrix.at(i * 8 + 1) * m_vector.at(i + m_width);
+		if (i < m_width * (m_height - 1) - 1) sum += m_matrix.at(i * 8 + 7) * m_vector.at(i + m_width + 1);
 		int mul = 1;
 		for (size_t j = 0; j < m_rule.size(); ++j)
 			mul *= (sum - m_rule.at(j));
@@ -107,33 +107,40 @@ void Life::PrintMatrix()
 
 void Life::PrintVector()
 {
-	std::cout << m_gener << '\n';
+	std::cout << m_gener << "\n\xC9";
+	for (size_t i = 0; i < m_width; ++i) std::cout << "\xCD";
+	std::cout << "\xBB\n";
 	for (size_t i = 0; i < m_height - 1; i += 2) {
+		std::cout << "\xBA";
 		for (size_t j = 0; j < m_width; ++j)
 			std::cout << (m_vector.at(i * m_width + j) ? (m_vector.at((i + 1) * m_width + j) ? "\xDB" : "\xDF") : (m_vector.at((i + 1) * m_width + j) ? "\xDC" : " "));
-		std::cout << '\n';
+		std::cout << "\xBA\n";
 	}
 	if (m_height % 2) {
+		std::cout << "\xBA";
 		for (size_t j = 0; j < m_width; ++j)
 			std::cout << (m_vector.at((m_height - 1) * m_width + j) ? "\xDF" : " ");
-		std::cout << '\n';
+		std::cout << "\xBA\n";
 	}
+	std::cout << "\xC8";
+	for (size_t i = 0; i < m_width; ++i) std::cout << "\xCD";
+	std::cout << "\xBC\n";
 }
 
 // Create transition matrix
 void Life::create_matrix_()
 {
-	m_matrix.resize(m_width * m_width * m_height * m_height);
+	m_matrix.resize(m_width * m_width * 8);
+	std::fill(m_matrix.begin(), m_matrix.end(), 0);
 	for (size_t i = 0; i < m_height; ++i)
 		for (size_t j = 0; j < m_width; ++j) {
-			m_matrix.at((i * m_width + j) * (m_width * m_height + 1)) = 1;
-			if (i > 0) m_matrix.at((i * m_width + j) * (m_width * m_height + 1) - m_width) = 2;
-			if (i < m_height - 1) m_matrix.at((i * m_width + j) * (m_width * m_height + 1) + m_width) = 2;
-			if (j > 0) m_matrix.at((i * m_width + j) * (m_width * m_height + 1) - 1) = 2;
-			if (j < m_width - 1) m_matrix.at((i * m_width + j) * (m_width * m_height + 1) + 1) = 2;
-			if (i > 0 && j > 0) m_matrix.at((i * m_width + j) * (m_width * m_height + 1) - m_width - 1) = 2;
-			if (i > 0 && j < m_width - 1) m_matrix.at((i * m_width + j) * (m_width * m_height + 1) - m_width + 1) = 2;
-			if (i < m_height - 1 && j > 0) m_matrix.at((i * m_width + j) * (m_width * m_height + 1) + m_width - 1) = 2;
-			if (i < m_height - 1 && j < m_width - 1) m_matrix.at((i * m_width + j) * (m_width * m_height + 1) + m_width + 1) = 2;
+			if (i > 0) m_matrix.at((i * m_width + j) * 8) = 2;
+			if (i < m_height - 1) m_matrix.at((i * m_width + j) * 8 + 1) = 2;
+			if (j > 0) m_matrix.at((i * m_width + j) * 8 + 2) = 2;
+			if (j < m_width - 1) m_matrix.at((i * m_width + j) * 8 + 3) = 2;
+			if (i > 0 && j > 0) m_matrix.at((i * m_width + j) * 8 + 4) = 2;
+			if (i > 0 && j < m_width - 1) m_matrix.at((i * m_width + j) * 8 + 5) = 2;
+			if (i < m_height - 1 && j > 0) m_matrix.at((i * m_width + j) * 8 + 6) = 2;
+			if (i < m_height - 1 && j < m_width - 1) m_matrix.at((i * m_width + j) * 8 + 7) = 2;
 		}
 }
