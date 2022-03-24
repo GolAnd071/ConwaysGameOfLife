@@ -24,32 +24,37 @@ Life::Life(const char filename[])
 	// Open file
 	FILE* file;
 	fopen_s(&file, filename, "r");
+	char c = ' ';
 
 	// Read size and rule
-	unsigned int x{}, y{}, b{}, s{};
-	if (file) fscanf_s(file, "x = %d, y = %d, rule = B%d/S%d\n", &x, &y, &b, &s);
-	m_width = 128, m_height = 128;
+	unsigned int x{}, y{};
+	if (file) fscanf_s(file, "x = %d, y = %d, rule = ", &x, &y);
+	m_width = 64, m_height = 64;
 	int offset_x = (m_width - x) / 2,
 		offset_y = (m_height - y) / 2;
-	std::string bs = std::to_string(b), ss = std::to_string(s);
-	for (auto i : bs) m_rule.push_back(2 * (i - '0'));
-	for (auto i : ss) m_rule.push_back(2 * (i - '0') + 1);
+	do {
+		if (file) c = fgetc(file);
+		if (c >= '0' && c <= '9') m_rule.push_back(2 * (c - '0'));
+	} while (c != '/');
+	do {
+		if (file) c = fgetc(file);
+		if (c >= '0' && c <= '9') m_rule.push_back(2 * (c - '0') + 1);
+	} while (c != '\n');
 
 	// Read field vector
 	m_vector.resize(m_width * m_height);
 	std::fill(m_vector.begin(), m_vector.end(), 0);
-	char c = ' ';
 	size_t i = 0, j = 0, n = 0;
 	do {
 		if (file) c = fgetc(file);
 		if (c == 'o') {
 			if (!n) n = 1;
-			while (n--) { m_vector.at((offset_y + i) * m_width + offset_x + j) = 1; ++j; }
+			while (n--) { m_vector[(offset_y + i)* m_width + offset_x + j] = 1; ++j; }
 			n = 0;
 		}
 		else if (c == 'b') {
 			if (!n) n = 1;
-			while (n--) { m_vector.at((offset_y + i) * m_width + offset_x + j) = 0; ++j; }
+			while (n--) { m_vector[(offset_y + i)* m_width + offset_x + j] = 0; ++j; }
 			n = 0;
 		}
 		else if (c == '$') {
@@ -76,55 +81,58 @@ void Life::Update()
 	// Multiply matrices
 	std::vector<int> new_vector(m_width * m_height);
 	for (size_t i = 0; i < m_width * m_height; ++i) {
-		int sum = m_vector.at(i);
-		if (i > 0) sum += m_matrix.at(i * 8 + 2) * m_vector.at(i - 1);
-		if (i < m_width * m_height - 1) sum += m_matrix.at(i * 8 + 3) * m_vector.at(i + 1);
-		if (i > m_width) sum += m_matrix.at(i * 8 + 4) * m_vector.at(i - m_width - 1);
-		if (i > m_width - 1) sum += m_matrix.at(i * 8) * m_vector.at(i - m_width);
-		if (i > m_width - 2) sum += m_matrix.at(i * 8 + 5) * m_vector.at(i - m_width + 1);
-		if (i < m_width * (m_height - 1) + 1) sum += m_matrix.at(i * 8 + 6) * m_vector.at(i + m_width - 1);
-		if (i < m_width * (m_height - 1)) sum += m_matrix.at(i * 8 + 1) * m_vector.at(i + m_width);
-		if (i < m_width * (m_height - 1) - 1) sum += m_matrix.at(i * 8 + 7) * m_vector.at(i + m_width + 1);
+		int sum = m_vector[i];
+		if (i > 0) sum += m_matrix[i * 8 + 2] * m_vector[i - 1];
+		if (i < m_width * m_height - 1) sum += m_matrix[i * 8 + 3] * m_vector[i + 1];
+		if (i > m_width) sum += m_matrix[i * 8 + 4] * m_vector[i - m_width - 1];
+		if (i > m_width - 1) sum += m_matrix[i * 8] * m_vector[i - m_width];
+		if (i > m_width - 2) sum += m_matrix[i * 8 + 5] * m_vector[i - m_width + 1];
+		if (i < m_width * (m_height - 1) + 1) sum += m_matrix[i * 8 + 6] * m_vector[i + m_width - 1];
+		if (i < m_width * (m_height - 1)) sum += m_matrix[i * 8 + 1] * m_vector[i + m_width];
+		if (i < m_width * (m_height - 1) - 1) sum += m_matrix[i * 8 + 7] * m_vector[i + m_width + 1];
 		int mul = 1;
 		for (size_t j = 0; j < m_rule.size(); ++j)
-			mul *= (sum - m_rule.at(j));
-		new_vector.at(i) = mul;
+			mul *= (sum - m_rule[j]);
+		new_vector[i] = mul;
 	}
 
 	// Update field vector
 	for (size_t i = 0; i < m_width * m_height; ++i)
-		m_vector.at(i) = (new_vector.at(i) == 0 ? 1 : 0);
+		m_vector[i] = (new_vector[i] == 0 ? 1 : 0);
 }
 
 void Life::PrintMatrix()
 {
 	for (size_t i = 0; i < m_height * m_width; ++i) {
 		for (size_t j = 0; j < m_width * m_height; ++j)
-			std::cout << m_matrix.at(i * m_width * m_height + j) << ' ';
-		std::cout << '\n';
+			printf_s("%d ", m_matrix[i * m_width * m_height + j]);
+		puts("");
 	}
 }
 
 void Life::PrintVector()
 {
-	std::cout << m_gener << "\n\xC9";
-	for (size_t i = 0; i < m_width; ++i) std::cout << "\xCD";
-	std::cout << "\xBB\n";
+	HANDLE hConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsoleHandle, FOREGROUND_GREEN);
+	printf_s("Generation: %d\n", m_gener);
+	putchar('\xC9');
+	for (size_t i = 0; i < m_width; ++i) putchar('\xCD');
+	puts("\xBB");
 	for (size_t i = 0; i < m_height - 1; i += 2) {
-		std::cout << "\xBA";
+		putchar('\xBA');
 		for (size_t j = 0; j < m_width; ++j)
-			std::cout << (m_vector.at(i * m_width + j) ? (m_vector.at((i + 1) * m_width + j) ? "\xDB" : "\xDF") : (m_vector.at((i + 1) * m_width + j) ? "\xDC" : " "));
-		std::cout << "\xBA\n";
+			putchar(m_vector[i * m_width + j] ? (m_vector[(i + 1) * m_width + j] ? '\xDB' : '\xDF') : (m_vector[(i + 1) * m_width + j] ? '\xDC' : ' '));
+		puts("\xBA");
 	}
 	if (m_height % 2) {
-		std::cout << "\xBA";
+		putchar('\xBA');
 		for (size_t j = 0; j < m_width; ++j)
-			std::cout << (m_vector.at((m_height - 1) * m_width + j) ? "\xDF" : " ");
-		std::cout << "\xBA\n";
+			putchar(m_vector[(m_height - 1) * m_width + j] ? '\xDF' : ' ');
+		puts("\xBA");
 	}
-	std::cout << "\xC8";
-	for (size_t i = 0; i < m_width; ++i) std::cout << "\xCD";
-	std::cout << "\xBC\n";
+	putchar('\xC8');
+	for (size_t i = 0; i < m_width; ++i) putchar('\xCD');
+	puts("\xBC");
 }
 
 // Create transition matrix
@@ -134,13 +142,13 @@ void Life::create_matrix_()
 	std::fill(m_matrix.begin(), m_matrix.end(), 0);
 	for (size_t i = 0; i < m_height; ++i)
 		for (size_t j = 0; j < m_width; ++j) {
-			if (i > 0) m_matrix.at((i * m_width + j) * 8) = 2;
-			if (i < m_height - 1) m_matrix.at((i * m_width + j) * 8 + 1) = 2;
-			if (j > 0) m_matrix.at((i * m_width + j) * 8 + 2) = 2;
-			if (j < m_width - 1) m_matrix.at((i * m_width + j) * 8 + 3) = 2;
-			if (i > 0 && j > 0) m_matrix.at((i * m_width + j) * 8 + 4) = 2;
-			if (i > 0 && j < m_width - 1) m_matrix.at((i * m_width + j) * 8 + 5) = 2;
-			if (i < m_height - 1 && j > 0) m_matrix.at((i * m_width + j) * 8 + 6) = 2;
-			if (i < m_height - 1 && j < m_width - 1) m_matrix.at((i * m_width + j) * 8 + 7) = 2;
+			if (i > 0) m_matrix[(i* m_width + j) * 8] = 2;
+			if (i < m_height - 1) m_matrix[(i* m_width + j) * 8 + 1] = 2;
+			if (j > 0) m_matrix[(i* m_width + j) * 8 + 2] = 2;
+			if (j < m_width - 1) m_matrix[(i* m_width + j) * 8 + 3] = 2;
+			if (i > 0 && j > 0) m_matrix[(i* m_width + j) * 8 + 4] = 2;
+			if (i > 0 && j < m_width - 1) m_matrix[(i* m_width + j) * 8 + 5] = 2;
+			if (i < m_height - 1 && j > 0) m_matrix[(i* m_width + j) * 8 + 6] = 2;
+			if (i < m_height - 1 && j < m_width - 1) m_matrix[(i* m_width + j) * 8 + 7] = 2;
 		}
 }
